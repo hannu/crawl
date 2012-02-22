@@ -4,6 +4,7 @@ require 'rss'
 require 'rubygems'
 require 'nokogiri'
 require 'grit'
+require 'digest/sha1'
 
 module Crawler
   BOTS = []
@@ -21,7 +22,15 @@ module Crawler
       @url = url
     end
     
+    def exists?
+      # Calculate GIT SHA1 hash and check if file already exists in repository
+      Crawler.repository.blob(
+        Digest::SHA1.hexdigest("blob #{self.to_s.length}\0#{self.to_s}")
+      ).size > 0
+    end
+    
     def save
+      return if self.exists?
       dirname = File.join(Crawler::REPOSITORY_DIR, self.bot.class::BOT_DIR)
       Dir.mkdir(dirname) unless File::exists?(dirname)
       fname = File.join(self.bot.class::BOT_DIR, self.uid)
@@ -61,6 +70,7 @@ module Crawler
           page.content = parse_content(response)
         rescue ContentParseError => e
           puts "ERROR: Could not parse content from '#{page.url}'"
+          return
         end
 
       elsif response.is_a?(Net::HTTPMovedPermanently)
@@ -120,7 +130,7 @@ module Crawler
     end
     
     # Commit found changes
-    unless (Crawler.repository.status.changed + Crawler.repository.status.untracked).empty?
+    unless (self.repository.status.changed + self.repository.status.untracked).empty?
       puts "There are change(s) to be committed"
       Dir.chdir(REPOSITORY_DIR) do
         Crawler.repository.add(".")
