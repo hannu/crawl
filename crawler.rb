@@ -9,11 +9,15 @@ require 'digest/sha1'
 module Crawler
   BOTS = []
   REPOSITORY_DIR = "./repository" # This should be GIT-repository, create it with 'git init'
-  
+
   def self.repository
     @repo || @repo = Grit::Repo.new(REPOSITORY_DIR)
   end
-  
+
+  def self.increase_item_count
+    @items_crawled += 1
+  end
+
   class Page
     attr_accessor :uid, :title, :url, :content, :bot
 
@@ -21,14 +25,14 @@ module Crawler
       @uid = uid
       @url = url
     end
-    
+
     def exists?
       # Calculate GIT SHA1 hash and check if file already exists in repository
       Crawler.repository.blob(
         Digest::SHA1.hexdigest("blob #{self.to_s.length}\0#{self.to_s}")
       ).size > 0
     end
-    
+
     def save
       return if self.exists?
       dirname = File.join(Crawler::REPOSITORY_DIR, self.bot.class::BOT_DIR)
@@ -36,7 +40,7 @@ module Crawler
       fname = File.join(self.bot.class::BOT_DIR, self.uid)
       File.open(File.join(Crawler::REPOSITORY_DIR, fname), 'w') { |f| f.write(self.to_s) }
     end
-    
+
     def to_s
       "#{title}\n#{url}\n\n#{content}"
     end
@@ -61,8 +65,9 @@ module Crawler
 
     def update(page)
       page.bot = self
+      Crawler.increase_item_count
       response = request_url(page.url)
-      
+
       if response.is_a?(Net::HTTPSuccess)
         begin
           # Parse content from successful response 
@@ -82,7 +87,7 @@ module Crawler
         new_uri.host = page.url.host unless new_uri.host
         new_uri.scheme = page.url.scheme unless new_uri.scheme
         page.url = new_uri
-        
+
         update(page)
         return
       elsif response.is_a?(Net::HTTPNotFound)
@@ -124,18 +129,17 @@ module Crawler
 
   def self.run_all
     # Run all bots
-    BOTS.each do |bot_class|
-      bot = bot_class.new
-      bot.run
-    end
+    @items_crawled = 0
+    BOTS.each { |bot_class| bot_class.new.run }
     
     # Commit found changes
+    puts "#{@items_crawled} item(s) crawled"
     unless (self.repository.status.changed + self.repository.status.untracked).empty?
       puts "There are change(s) to be committed"
       Dir.chdir(REPOSITORY_DIR) do
         Crawler.repository.add(".")
       end
-      Crawler.repository.commit_index('Crawled changes')
+      Crawler.repository.commit_index("Update item(s) (#{@items_crawled} items crawled)")
       puts "DONE!"
     else
       puts "No changes found"
