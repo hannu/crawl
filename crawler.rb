@@ -3,16 +3,29 @@ require 'open-uri'
 require 'rss'
 require 'rubygems'
 require 'nokogiri'
+require 'grit'
 
 module Crawler
   BOTS = []
-
+  REPOSITORY_DIR = "./repository" # This should be GIT-repository, create it with 'git init'
+  
+  def self.repository
+    @repo || @repo = Grit::Repo.new(REPOSITORY_DIR)
+  end
+  
   class Page
-    attr_accessor :uid, :title, :url, :content
+    attr_accessor :uid, :title, :url, :content, :bot
 
     def initialize(uid, url)
       @uid = uid
       @url = url
+    end
+    
+    def save
+      dirname = File.join(Crawler::REPOSITORY_DIR, self.bot.class::BOT_DIR)
+      Dir.mkdir(dirname) unless File::exists?(dirname)
+      fname = File.join(self.bot.class::BOT_DIR, self.uid)
+      File.open(File.join(Crawler::REPOSITORY_DIR, fname), 'w') { |f| f.write(self.to_s) }
     end
     
     def to_s
@@ -38,11 +51,9 @@ module Crawler
     end
 
     def update(page)
+      page.bot = self
       response = request_url(page.url)
-
-      puts page.uid
-      puts page.url
-
+      
       if response.is_a?(Net::HTTPSuccess)
         begin
           # Parse content from successful response 
@@ -65,6 +76,7 @@ module Crawler
         update(page)
         return
       elsif response.is_a?(Net::HTTPNotFound)
+        page.title = page.content = ""
       elsif response != false
         puts "#{page.url} returned #{response.class}"
         return
@@ -72,10 +84,8 @@ module Crawler
         # We could not resolve the page
         return
       end
-      
-      puts page.title
-      puts page.content
-      puts "-"*80
+
+      page.save
     end
 
     def run
@@ -103,9 +113,22 @@ module Crawler
   end
 
   def self.run_all
+    # Run all bots
     BOTS.each do |bot_class|
       bot = bot_class.new
       bot.run
+    end
+    
+    # Commit found changes
+    unless (Crawler.repository.status.changed + Crawler.repository.status.untracked).empty?
+      puts "There are change(s) to be committed"
+      Dir.chdir(REPOSITORY_DIR) do
+        Crawler.repository.add(".")
+      end
+      Crawler.repository.commit_index('Crawled changes')
+      puts "DONE!"
+    else
+      puts "No changes found"
     end
   end
 end
