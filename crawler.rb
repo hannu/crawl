@@ -79,8 +79,8 @@ module Crawler
 
         # Redirection does not always contain full url
         # Get host and scheme from url url if needed
-        new_uri.host = uri.host unless new_uri.host
-        new_uri.scheme = uri.scheme unless new_uri.scheme
+        new_uri.host = page.url.host unless new_uri.host
+        new_uri.scheme = page.url.scheme unless new_uri.scheme
         page.url = new_uri
         
         update(page)
