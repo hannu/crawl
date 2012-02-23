@@ -1,7 +1,7 @@
 require 'uri'
 require 'open-uri'
 require 'rss'
-require 'rubygems'
+require 'rubygems' if RUBY_VERSION < '1.9'
 require 'nokogiri'
 require 'grit'
 require 'digest/sha1'
@@ -131,18 +131,22 @@ module Crawler
     # Run all bots
     @items_crawled = 0
     BOTS.each { |bot_class| bot_class.new.run }
-    
+
     # Commit found changes
     puts "#{@items_crawled} item(s) crawled"
-    unless (self.repository.status.changed + self.repository.status.untracked).empty?
-      puts "There are change(s) to be committed"
-      Dir.chdir(REPOSITORY_DIR) do
-        Crawler.repository.add(".")
+    Dir.chdir(REPOSITORY_DIR) do
+      # Commit new files
+      if (new_count = self.repository.status.untracked.length) > 0
+        self.repository.status.untracked.each {|filename, statusfile| Crawler.repository.add(filename)}
+        Crawler.repository.commit_index("Add #{new_count} item(s)")
       end
-      Crawler.repository.commit_index("Update item(s) (#{@items_crawled} items crawled)")
-      puts "DONE!"
-    else
-      puts "No changes found"
+
+      # Commit changed files
+      if (changed_count = self.repository.status.changed.length) > 0
+        self.repository.status.changed.each {|filename, statusfile| Crawler.repository.add(filename)}
+        Crawler.repository.commit_index("Updated #{changed_count} item(s)")
+      end
+      puts "Added #{new_count} new item(s) and updated #{changed_count} item(s)"
     end
   end
 end
