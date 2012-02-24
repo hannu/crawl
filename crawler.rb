@@ -21,9 +21,10 @@ module Crawler
   class Page
     attr_accessor :uid, :title, :url, :content, :bot
 
-    def initialize(uid, url)
-      @uid = uid
-      @url = url
+    def initialize(properties = {})
+      [:uid, :title, :url, :content, :bot].each do |key|
+        self.instance_variable_set("@#{key}", properties[key])
+      end
     end
 
     def exists?

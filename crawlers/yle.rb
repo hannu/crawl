@@ -19,7 +19,7 @@ module Crawler
         next if !uri or uri.host != "yle.fi" # Invalid URL  
         uri.query = nil # Remove ..?origin=rss from URL
         uid = /\_([0-9]+)\.html/.match(uri.path)[1]
-        pages << Page.new(uid, uri)
+        pages << Page.new({:uid => uid, :url => uri})
       end
       pages
     end

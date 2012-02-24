@@ -17,7 +17,7 @@ module Crawler
         uri = URI.parse(item.link)
         next if !uri or uri.host != "www.aamulehti.fi" # Invalid URL
         uid = /\/([0-9]+)/.match(uri.path)[1]
-        pages << Page.new(uid, uri)
+        pages << Page.new({:uid => uid, :url => uri})
       end
       pages
     end
