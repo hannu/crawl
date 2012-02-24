@@ -5,10 +5,13 @@ require 'rubygems' if RUBY_VERSION < '1.9'
 require 'nokogiri'
 require 'grit'
 require 'digest/sha1'
+require File.join(File.dirname(__FILE__), 'page')
 
 module Crawler
   BOTS = []
-  REPOSITORY_DIR = "./repository" # This should be GIT-repository, create it with 'git init'
+
+  # This should be GIT-repository, create it with 'git init'
+  REPOSITORY_DIR = File.join(File.expand_path(File.dirname(__FILE__)), "repository")
 
   def self.repository
     @repo || @repo = Grit::Repo.new(REPOSITORY_DIR)
@@ -16,35 +19,6 @@ module Crawler
 
   def self.increase_item_count
     @items_crawled += 1
-  end
-
-  class Page
-    attr_accessor :uid, :title, :url, :content, :bot
-
-    def initialize(properties = {})
-      [:uid, :title, :url, :content, :bot].each do |key|
-        self.instance_variable_set("@#{key}", properties[key])
-      end
-    end
-
-    def exists?
-      # Calculate GIT SHA1 hash and check if file already exists in repository
-      Crawler.repository.blob(
-        Digest::SHA1.hexdigest("blob #{self.to_s.length}\0#{self.to_s}")
-      ).size > 0
-    end
-
-    def save
-      return if self.exists?
-      dirname = File.join(Crawler::REPOSITORY_DIR, self.bot.class::BOT_DIR)
-      Dir.mkdir(dirname) unless File::exists?(dirname)
-      fname = File.join(self.bot.class::BOT_DIR, self.uid)
-      File.open(File.join(Crawler::REPOSITORY_DIR, fname), 'w') { |f| f.write(self.to_s) }
-    end
-
-    def to_s
-      "#{title}\n#{url}\n\n#{content}"
-    end
   end
 
   class Bot
