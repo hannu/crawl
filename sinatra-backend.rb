@@ -1,34 +1,46 @@
 require 'rubygems'  if RUBY_VERSION < '1.9'
-require 'nokogiri'
 require 'grit'
 require 'json'
 require 'sinatra/base'
+require File.join(File.dirname(__FILE__), 'page')
 
-REPOSITORY_DIR = "./repository" # This should be GIT-repository, create it with 'git init'
+# This should be GIT-repository, create it with 'git init'
+REPOSITORY_DIR = File.join(File.expand_path(File.dirname(__FILE__)), "repository")
 
 class CrawlerWeb < Sinatra::Base
   set :static, true
-  
+
   get '/' do
     File.read(File.join(settings.public_folder, 'index.html'))
   end
-  
-  get '/globs.json' do
-  end
-  
-  get '/globs/:path/:id.json' do
+
+  get '/diffs.json' do
     content_type :json
-    
+    repo = Grit::Repo.new(REPOSITORY_DIR)
+    Dir.chdir(REPOSITORY_DIR) do
+      repo.log(nil,nil,{:n => 10}).map{ |c|
+        {:date => c.date, :diffs => c.diffs.map {|diff|
+          unless diff.new_file # We are not intrested in new file
+            {
+              :path => diff.b_path,
+              :a_blob => Page.parse_from_string(diff.a_blob.data).to_hash,
+              :b_blob => Page.parse_from_string(diff.a_blob.data).to_hash
+            }
+          end
+        }.compact}
+      }.to_json
+    end
+  end
+
+  get '/diffs/:path/:id.json' do
+    content_type :json
     filename = File.join(params[:path],params[:id])
     repo = Grit::Repo.new(REPOSITORY_DIR)
-    globs = []
     Dir.chdir(REPOSITORY_DIR) do
-      globs = repo.log(filename).collect do |commit|
-        title, url, empty_line, content = (commit.tree/filename).data.split("\n",4)
-        {:title => title, :url => url, :content => content, :date => commit.date}
-      end
+      repo.log(filename).map{ |commit|
+        Page.parse_from_string((commit.tree/filename).data).to_hash.merge({:date => commit.date, :path => filename})
+      }.to_json
     end
-    globs.to_json
   end
 end
 
