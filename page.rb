@@ -8,7 +8,7 @@ class Page
   end
 
   def self.parse_from_string(str)
-    title, url, empty_line, content = (commit.tree/filename).data.split("\n",4)
+    title, url, empty_line, content = str.split("\n",4)
     Page.new({:title => title, :url => url, :content => content})
   end
 
@@ -27,7 +27,11 @@ class Page
     File.open(File.join(Crawler::REPOSITORY_DIR, fname), 'w') { |f| f.write(self.to_s) }
   end
 
+  def to_hash
+    {:title => @title, :url => @url, :content => @content}
+  end
+
   def to_s
-    "#{title}\n#{url}\n\n#{content}"
+    "#{@title}\n#{@url}\n\n#{@content}"
   end
 end
