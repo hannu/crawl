@@ -18,15 +18,13 @@ class CrawlerWeb < Sinatra::Base
     content_type :json
     repo = Grit::Repo.new(REPOSITORY_DIR)
     Dir.chdir(REPOSITORY_DIR) do
-      repo.log(nil,nil,{:n => 10}).map{ |c|
+      repo.log(nil,nil,{:n => 10, :diff_filter => 'M'}).map{ |c|
         {:date => c.date, :diffs => c.diffs.map {|diff|
-          unless diff.new_file # We are not intrested in new file
-            {
-              :path => diff.b_path,
-              :a_blob => Page.parse_from_string(diff.a_blob.data).to_hash,
-              :b_blob => Page.parse_from_string(diff.a_blob.data).to_hash
-            }
-          end
+          {
+            :path => diff.b_path,
+            :a_blob => Page.parse_from_string(diff.a_blob.data).to_hash,
+            :b_blob => Page.parse_from_string(diff.a_blob.data).to_hash
+          }
         }.compact}
       }.to_json
     end
