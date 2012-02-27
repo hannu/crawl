@@ -38,44 +38,29 @@ module Crawler
       #NOTE: This is implemented in subclass
     end
 
+    # Parse content of the page
+    def parse_title
+      #NOTE: This is implemented in subclass
+    end
+
     def update(page)
       page.bot = self
       Crawler.increase_item_count
-      response = request_url(page.url)
 
-      if response.is_a?(Net::HTTPSuccess)
-        begin
-          # Parse content from successful response 
-          page.title = parse_title(response)
-          page.content = parse_content(response)
-        rescue ContentParseError => e
-          puts "ERROR: Could not parse content from '#{page.url}'"
-          return
-        end
-
-      elsif response.is_a?(Net::HTTPMovedPermanently)
-        # TODO: Handle redirection loops
-        new_uri = URI.parse(response['location'])
-
-        # Redirection does not always contain full url
-        # Get host and scheme from url url if needed
-        new_uri.host = page.url.host unless new_uri.host
-        new_uri.scheme = page.url.scheme unless new_uri.scheme
-        page.url = new_uri
-
-        update(page)
-        return
-      elsif response.is_a?(Net::HTTPNotFound)
-        page.title = page.content = ""
-      elsif response != false
-        puts "#{page.url} returned #{response.class}"
-        return
-      else
-        # We could not resolve the page
-        return
+      request = Net::HTTP::Get.new(page.url.request_uri)
+      request.initialize_http_header({"User-Agent" => USER_AGENT})
+      begin
+        response = Net::HTTP.new(page.url.host, page.url.port).request(request)
+      rescue StandardError, Timeout::Error => e
+        # TODO: Log error
       end
 
-      page.save
+      page.save if case response
+        when Net::HTTPSuccess: handle_success(page, response)
+        when Net::HTTPMovedPermanently: handle_redirect(page, response)
+        when Net::HTTPNotFound: handle_not_found(page, response)
+        else false
+      end
     end
 
     def run
@@ -86,14 +71,35 @@ module Crawler
 
     private
 
-    def request_url(uri)
-      http = Net::HTTP.new(uri.host, uri.port)
-      request = Net::HTTP::Get.new(uri.request_uri)
-      request.initialize_http_header({"User-Agent" => USER_AGENT})
-      http.request(request)
-    rescue StandardError, Timeout::Error => e
-      # TODO: Log error
+    def handle_not_found(page, request)
+      page.title = page.content = ""
+      true
+    end
+
+    def handle_redirect(page, response)
+      # TODO: Handle redirection loops
+      new_uri = URI.parse(response['location'])
+
+      # Redirection does not always contain full url
+      # Get host and scheme from url url if needed
+      new_uri.host = page.url.host unless new_uri.host
+      new_uri.scheme = page.url.scheme unless new_uri.scheme
+      page.url = new_uri
+
+      update(page)
       false
+    end
+
+    def handle_success(page, response)
+      begin
+        # Parse content from successful response
+        page.title = parse_title(response)
+        page.content = parse_content(response)
+      rescue ContentParseError => e
+        puts "ERROR: Could not parse content from '#{page.url}'"
+        return false
+      end
+      true
     end
   end
 
