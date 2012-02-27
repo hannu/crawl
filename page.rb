@@ -9,7 +9,7 @@ class Page
 
   def self.parse_from_string(str)
     title, url, empty_line, content = str.split("\n",4)
-    Page.new({:title => title, :url => url, :content => content})
+    Page.new({:title => title, :url => URI.parse(url), :content => content})
   end
 
   def exists?
