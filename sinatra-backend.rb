@@ -20,10 +20,12 @@ class CrawlerWeb < Sinatra::Base
     Dir.chdir(REPOSITORY_DIR) do
       repo.log(nil,nil,{:n => 10, :diff_filter => 'M'}).map{ |c|
         c.diffs.map { |diff|
-            {:path => diff.b_path,
+          {
+            :path => diff.b_path,
             :date => c.date,
             :a_blob => Page.parse_from_string(diff.a_blob.data).to_hash,
-            :b_blob => Page.parse_from_string(diff.a_blob.data).to_hash}
+            :b_blob => Page.parse_from_string(diff.a_blob.data).to_hash
+          }
         }
       }.flatten.to_json
     end
