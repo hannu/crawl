@@ -21,6 +21,7 @@ class CrawlerWeb < Sinatra::Base
       repo.log(nil,nil,{:n => 10, :diff_filter => 'M'}).map{ |c|
         c.diffs.map { |diff|
           {
+            :id => "#{diff.b_path}/#{c.date.to_i}",
             :path => diff.b_path,
             :date => c.date,
             :a_blob => Page.parse_from_string(diff.a_blob.data).to_hash,
