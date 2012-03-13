@@ -24,7 +24,7 @@ class CrawlerWeb < Sinatra::Base
             :path => diff.b_path,
             :date => c.date,
             :a_blob => Page.parse_from_string(diff.a_blob.data).to_hash,
-            :b_blob => Page.parse_from_string(diff.a_blob.data).to_hash
+            :b_blob => Page.parse_from_string(diff.b_blob.data).to_hash
           }
         }
       }.flatten.to_json
