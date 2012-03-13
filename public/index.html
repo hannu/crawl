@@ -1,1 +1,126 @@
-Test foobar
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Diffs</title>
+</head>
+<body>
+<div id="sidebar">
+</div>
+<div id="content">
+</div>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.3.1/underscore-min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.1/backbone-min.js"></script>
+<script src="jsdiff.js"></script>
+<script type="text/template" id="tpl-diff-list-item">
+	<a href='#<%= href %>'><%= path %> (+<%= insCount %>, -<%= delCount %>)</a>
+</script>
+<script type="text/template" id="tpl-diff-details">
+  <h1><%= title %></h1>
+  <p><%= content %></p>
+</script>
+<style type="text/css">
+  ins {background: #E6FFE6; text-decoration: underline;}
+  del {background: #FFE6E6; text-decoration: line-through;}
+</style>
+
+<script>
+(function ($) {
+  Diff = Backbone.Model.extend({
+    url: function () {
+      return 'diffs/' + this.id //We don't want escaped slashes
+    },
+    contentDiff: function() {
+      var cdiff = diffString(this.attributes.a_blob.content, this.attributes.b_blob.content);
+      return cdiff.replace(/\n\n/g,"</p><p>").replace(/\n/g,"<br/>")
+    },
+    titleDiff: function() {
+      return diffString(this.attributes.a_blob.title, this.attributes.b_blob.title);
+    },
+    insCount: function() {
+      return this.contentDiff().split('<ins>').length 
+    },
+    delCount: function() {
+      return this.contentDiff().split('<del>').length 
+    }
+  });
+  
+  DiffView = Backbone.View.extend({
+    template:_.template($('#tpl-diff-details').html()),
+    render: function (eventName) {
+      $(this.el).html(this.template({
+        title: this.model.titleDiff(),
+        content: this.model.contentDiff(),
+        url: this.model.attributes.b_blob.url
+      }));
+      return this;
+    }
+  });
+
+  DiffCollection = Backbone.Collection.extend({
+    model: Diff,
+    url: '/diffs.json'
+  });
+  
+  DiffListView = Backbone.View.extend({
+    tagName: 'ul',
+    initialize: function () {
+      this.model.bind("reset", this.render, this);
+    },
+    render: function (eventName) {
+      _.each(this.model.models, function (diff) {
+        $(this.el).append(new DiffListItemView({model:diff}).render().el);
+      }, this);
+      return this;
+    }
+  });
+
+  DiffListItemView = Backbone.View.extend({
+    tagName: "li",
+    template:_.template($('#tpl-diff-list-item').html()),
+    render: function (eventName) {
+      $(this.el).html(this.template({
+        path: this.model.attributes.path,
+        href: this.model.url(),
+        insCount: this.model.insCount(),
+        delCount: this.model.delCount()
+      }));
+      return this;
+    }
+  });
+
+  // Router
+  var AppRouter = Backbone.Router.extend({
+    initialize: function () {
+      this.route("", "list");
+      this.route(/^diffs\/(.*?)$/, "show");
+    },
+    list: function () {
+      var self = this;
+      this.diffList = new DiffCollection();
+      this.diffListView = new DiffListView({model: this.diffList});
+      this.diffList.fetch({
+        success: function () {
+          $('#sidebar').html(self.diffListView.render().el);
+          if (self.currentId) self.show(self.currentId);
+        }
+      });
+    },
+    show: function (id) {
+      if (this.diffList) {
+        this.diff = this.diffList.get(id);
+        this.diffDetails = new DiffView({model: this.diff});
+        $('#content').html(this.diffDetails.render().el);
+      } else {
+        this.currentId = id;
+        this.list();
+      }
+    }
+  });
+
+  var app = new AppRouter();
+  Backbone.history.start();
+})(jQuery);
+</script>
+</body>
+</html>
