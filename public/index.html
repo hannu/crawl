@@ -38,10 +38,10 @@
       return diffString(this.attributes.a_blob.title, this.attributes.b_blob.title);
     },
     insCount: function() {
-      return this.contentDiff().split('<ins>').length 
+      return this.contentDiff().split('<ins>').length + this.titleDiff().split('<ins>').length - 2
     },
     delCount: function() {
-      return this.contentDiff().split('<del>').length 
+      return this.contentDiff().split('<del>').length + this.titleDiff().split('<del>').length - 2 
     }
   });
   
