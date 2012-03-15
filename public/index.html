@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Diffs</title>
+  <title>UutisDiff</title>
 </head>
 <body>
 <div id="sidebar">
+  <h1><ins>U</ins>utis<ins>D</ins>iff</h1>
+  <div id="diffs">
+  </div>
 </div>
 <div id="content">
 </div>
@@ -13,17 +16,66 @@
 <script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.1/backbone-min.js"></script>
 <script src="jsdiff.js"></script>
 <script type="text/template" id="tpl-diff-list-item">
-  <a href='#<%= href %>'><%= path %> (+<%= insCount %>, -<%= delCount %>)</a>
+  <a href='#<%= href %>'><%= text %></a> (<span class="plus">+</span><%= insCount %> <span class="minus">-</span><%= delCount %>)
 </script>
 <script type="text/template" id="tpl-diff-details">
   <h1><%= title %></h1>
   <p><%= content %></p>
+  <p><a href="<%= url %>">Alkuperäinen artikkeli</a></p>
 </script>
 <style type="text/css">
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    background: #F4F4F4;
+  }
+  h1 {font-size: 30px; line-height: 36px;}
+  h2 {font-size: 22px; line-height: 36px;}
+  p {
+    margin: 0 0 9px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    line-height: 18px;
+  }
+  #sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  #sidebar li {
+    padding-bottom: 10px;
+  }
+  #sidebar a {
+    text-decoration: none;
+  }
+  #sidebar a:hover {
+    text-decoration: underline;
+  }
+  #sidebar {
+    background: white;
+    box-shadow: 0 0 20px #ccc;
+    -webkit-box-shadow: 0 0 20px #ccc;
+    -moz-box-shadow: 0 0 20px #ccc;
+    overflow-y: auto;
+    padding: 0 30px 30px 30px;
+    width: 300px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    border-right: 1px solid #BBB;
+  }
+  #content {
+    margin: 0 40px 50px 400px;
+    position: relative;
+    max-width: 550px;
+  }
   ins {background: #E6FFE6; text-decoration: underline;}
   del {background: #FFE6E6; text-decoration: line-through;}
+  .plus, .minus {font-weight: bold;}
+  .plus {color: green;}
+  .minus {color: red;}
 </style>
-
 <script>
 (function ($) {
   Diff = Backbone.Model.extend({
@@ -80,7 +132,8 @@
     template:_.template($('#tpl-diff-list-item').html()),
     render: function (eventName) {
       $(this.el).html(this.template({
-        path: this.model.attributes.path,
+        date: new Date(Date.parse(this.model.attributes.date)),
+        text: this.model.attributes.b_blob.title,
         href: this.model.url(),
         insCount: this.model.insCount(),
         delCount: this.model.delCount()
@@ -101,7 +154,7 @@
       this.diffListView = new DiffListView({model: this.diffList});
       this.diffList.fetch({
         success: function () {
-          $('#sidebar').html(self.diffListView.render().el);
+          $('#diffs').html(self.diffListView.render().el);
           if (self.currentId) self.show(self.currentId);
         }
       });
