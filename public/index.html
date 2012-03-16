@@ -166,7 +166,7 @@
       this.diffListView = new DiffListView({model: this.diffList});
       this.diffList.fetch({
         success: function () {
-          $('#diffs').html(self.diffListView.render().el);
+          $('#diffs').html(self.diffListView.el);
           if (self.currentId) self.show(self.currentId);
         }
       });
