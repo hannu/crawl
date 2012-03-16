@@ -35,17 +35,17 @@ class CrawlerWeb < Sinatra::Base
     File.read(File.join(settings.public_folder, 'index.html'))
   end
 
-  get '/diffs.json' do
+  get '/diffs' do
     content_type :json
     get_diff.to_json
   end
 
-  get '/diffs/:site/:item.json' do
+  get '/diffs/:site/:item' do
     content_type :json
     get_diff("#{params[:site]}/#{params[:item]}").to_json
   end
 
-  get '/diffs/:site/:item/:date.json' do
+  get '/diffs/:site/:item/:date' do
     content_type :json
     get_diff("#{params[:site]}/#{params[:item]}", params[:date]).to_json
   end
