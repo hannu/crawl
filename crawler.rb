@@ -132,4 +132,8 @@ module Crawler
   end
 end
 
+unless File.directory?(Crawler::REPOSITORY_DIR) and File.directory?(File.join(Crawler::REPOSITORY_DIR,".git"))
+  raise Crawler::REPOSITORY_DIR + " is not git repository. Create it with 'git init'"
+end
+
 Crawler.run_all
