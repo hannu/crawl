@@ -16,6 +16,7 @@
 <script src="backbone-min.js"></script>
 <script src="jsdiff.js"></script>
 <script type="text/template" id="tpl-diff-list-item">
+  <!-- <%= date %> -->
   <a href='#<%= href %>'><%= text %></a> (<span class="plus">+</span><%= insCount %> <span class="minus">-</span><%= delCount %>)
 </script>
 <script type="text/template" id="tpl-diff-details">
@@ -43,7 +44,14 @@
     margin: 0;
   }
   #sidebar li {
-    padding-bottom: 10px;
+    padding: 5px;
+  }
+  #sidebar li.selected {
+    color: #FFF;
+    background: #004563;
+  }
+  #sidebar li.selected a {
+    color: #FFF;
   }
   #sidebar a {
     text-decoration: none;
@@ -82,6 +90,9 @@
     url: function () {
       return 'diffs/' + this.id //We don't want escaped slashes
     },
+    idClass: function() {
+      return this.id.replace(/\/|\./g, "-")
+    },
     contentDiff: function() {
       var cdiff = diffString(this.attributes.a_blob.content, this.attributes.b_blob.content);
       return cdiff.replace(/\n\n/g,"</p><p>").replace(/\n/g,"<br/>")
@@ -111,7 +122,7 @@
 
   DiffCollection = Backbone.Collection.extend({
     model: Diff,
-    url: '/diffs.json'
+    url: '/diffs'
   });
   
   DiffListView = Backbone.View.extend({
@@ -138,6 +149,7 @@
         insCount: this.model.insCount(),
         delCount: this.model.delCount()
       }));
+      $(this.el).addClass(this.model.idClass());
       return this;
     }
   });
@@ -161,9 +173,25 @@
     },
     show: function (id) {
       if (this.diffList) {
+        // Try to load model from local collection
         this.diff = this.diffList.get(id);
-        this.diffDetails = new DiffView({model: this.diff});
-        $('#content').html(this.diffDetails.render().el);
+        // Fetch from server if model not found
+        if (!this.diff) {
+          var self = this;
+          this.diff = new Diff({id: id});
+          this.diff.fetch({
+            success: function () {
+              self.diffDetails = new DiffView({model: self.diff});
+              $('#content').html(self.diffDetails.render().el);
+              $('#sidebar ul li').removeClass('selected');   
+            }
+          })
+        } else {
+          this.diffDetails = new DiffView({model: this.diff});
+          $('#content').html(this.diffDetails.render().el);
+          $('#sidebar ul li').removeClass('selected');
+          $('#sidebar ul li.'+this.diff.idClass()).addClass('selected');        
+        }
       } else {
         this.currentId = id;
         this.list();
