@@ -17,7 +17,7 @@
 <script src="jsdiff.js"></script>
 <script type="text/template" id="tpl-diff-list-item">
   <!-- <%= date %> -->
-  <a href='#<%= href %>'><%= text %></a> (<span class="plus">+</span><%= insCount %> <span class="minus">-</span><%= delCount %>)
+  <a href='#<%= href %>'><%= text %> (<span class="plus">+</span><%= insCount %> <span class="minus">-</span><%= delCount %>)</a>
 </script>
 <script type="text/template" id="tpl-diff-details">
   <h1><%= title %></h1>
@@ -27,38 +27,22 @@
 <style type="text/css">
   body {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-size: 13px;
+    font-size: 14px;
     background: #F4F4F4;
+    color: #333;
   }
   h1 {font-size: 30px; line-height: 36px;}
   h2 {font-size: 22px; line-height: 36px;}
-  p {
-    margin: 0 0 9px;
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-size: 13px;
-    line-height: 18px;
-  }
-  #sidebar ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  #sidebar li {
-    padding: 5px;
-  }
-  #sidebar li.selected {
-    color: #FFF;
-    background: #004563;
-  }
-  #sidebar li.selected a {
-    color: #FFF;
-  }
-  #sidebar a {
-    text-decoration: none;
-  }
-  #sidebar a:hover {
-    text-decoration: underline;
-  }
+  p {margin: 0 0 9px; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; line-height: 20px;}
+  a {color: #444;}
+  a:visited {color: #666;}
+  a:hover {color: #000;}
+  ins {background: #E6FFE6; text-decoration: underline;}
+  del {background: #FFE6E6; text-decoration: line-through;}
+  #sidebar ul {list-style: none; padding: 0; margin: 0;}
+  #sidebar li.selected a {color: #08C; -moz-border-radius: 3px; border-radius: 3px;}
+  #sidebar a {display: block; padding: 5px; text-decoration: none;}
+  #sidebar a:hover {background: #EEE;}
   #sidebar {
     background: white;
     box-shadow: 0 0 20px #ccc;
@@ -78,8 +62,6 @@
     position: relative;
     max-width: 550px;
   }
-  ins {background: #E6FFE6; text-decoration: underline;}
-  del {background: #FFE6E6; text-decoration: line-through;}
   .plus, .minus {font-weight: bold;}
   .plus {color: green;}
   .minus {color: red;}
