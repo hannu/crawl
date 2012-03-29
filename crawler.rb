@@ -1,7 +1,7 @@
+require 'rubygems' if RUBY_VERSION < '1.9'
 require 'uri'
 require 'open-uri'
 require 'rss'
-require 'rubygems' if RUBY_VERSION < '1.9'
 require 'nokogiri'
 require 'grit'
 require 'digest/sha1'
@@ -103,11 +103,6 @@ module Crawler
     end
   end
 
-  # Load all crawlers
-  Dir[File.join(File.dirname(__FILE__),"crawlers/*.rb")].uniq.each do |file|
-    require file
-  end
-
   def self.run_all
     # Run all bots
     @items_crawled = 0
@@ -135,5 +130,18 @@ end
 unless File.directory?(Crawler::REPOSITORY_DIR) and File.directory?(File.join(Crawler::REPOSITORY_DIR,".git"))
   raise Crawler::REPOSITORY_DIR + " is not git repository. Create it with 'git init'"
 end
+
+if ARGV.size > 0
+  ARGV.each do |file|
+    require file
+  end
+else
+  # Load all crawlers
+  Dir[File.join(File.dirname(__FILE__),"crawlers/*.rb")].uniq.each do |file|
+    require file
+  end
+end
+
+puts "Loaded #{Crawler::BOTS.size} crawler(s)"
 
 Crawler.run_all
