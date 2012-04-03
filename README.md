@@ -5,12 +5,12 @@ Crawl is experimental project that tracks popular finnish news sites and reveals
 
 Modular structure supports also external site parsers.
 
-GIT is used as a database for the articles. Also changes are detected using GIT. Changes could be browsed using GIT tools, but project also contains web front-end built on [Sinatra](http://www.sinatrarb.com/) and [Backbone.js](http://documentcloud.github.com/backbone/). 
+GIT is used to store the articles. Article changes could be browsed using GIT tools, but project also contains web front-end built on [Sinatra](http://www.sinatrarb.com/) and [Backbone.js](http://documentcloud.github.com/backbone/). 
 
 Setup
 -----
 
-Install required gems with
+Install required gems (nokogiri, json, grit, thin, sinatra) with
 
 <pre>
 bundle install
@@ -31,7 +31,7 @@ bundle exec ruby sinatra-backend.rb
 Usage
 -----
 
-To detect changes crawlers should be executed for example every hour (cron task is recommended)
+To detect changes crawlers should be executed for example every hour (cron task is recommended).
 Run all crawlers in ./crawlers directory with command
 
 <pre>
